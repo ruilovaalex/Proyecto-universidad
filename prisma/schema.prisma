@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Carrera {
+  id         Int         @id @default(autoincrement())
+  nombre     String
+  materias   Materia[]
+  matriculas Matricula[]
+}
+
+model Materia {
+  id           Int              @id @default(autoincrement())
+  nombre       String
+  carreraId    Int
+  carrera      Carrera          @relation(fields: [carreraId], references: [id])
+  matriculas   Matricula[]
+  asignaciones AsignacionLab[]
+}
+
+model Ciclo {
+  id           Int              @id @default(autoincrement())
+  nombre       String
+  activo       Boolean          @default(true)
+  matriculas   Matricula[]
+  asignaciones AsignacionLab[]
+}
+
+model Estudiante {
+  id         Int         @id @default(autoincrement())
+  nombre     String
+  matriculas Matricula[]
+}
+
+model Matricula {
+  id           Int        @id @default(autoincrement())
+  activa       Boolean    @default(true)
+  estudianteId Int
+  cicloId      Int
+  materiaId    Int
+  carreraId    Int
+  estudiante   Estudiante @relation(fields: [estudianteId], references: [id])
+  ciclo        Ciclo      @relation(fields: [cicloId], references: [id])
+  materia      Materia    @relation(fields: [materiaId], references: [id])
+  carrera      Carrera    @relation(fields: [carreraId], references: [id])
+}
+
+model Laboratorio {
+  id           Int             @id @default(autoincrement())
+  nombre       String
+  asignaciones AsignacionLab[]
+}
+
+model AsignacionLab {
+  id            Int         @id @default(autoincrement())
+  laboratorioId Int
+  cicloId       Int
+  materiaId     Int
+  laboratorio   Laboratorio @relation(fields: [laboratorioId], references: [id])
+  ciclo         Ciclo       @relation(fields: [cicloId], references: [id])
+  materia       Materia     @relation(fields: [materiaId], references: [id])
+}
