@@ -2,37 +2,55 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
+type CrearCarreraParams = {
+  nombreCarrera?: string;
+  materias?: string[];
+};
+
+type CrearCicloParams = {
+  nombreCiclo?: string;
+  carreraNombre?: string;
+};
+
+type AsignarLaboratorioParams = {
+  materiaNombre?: string;
+  laboratorioNombre?: string;
+};
+
 @Injectable()
 export class UniversidadService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async crearCarreraConMaterias() {
+  async crearCarreraConMaterias(params: CrearCarreraParams) {
+    const { nombreCarrera, materias } = params;
+
+    if (!nombreCarrera) {
+      throw new Error('Debe enviar el nombre de la carrera');
+    }
+
+    if (!materias || materias.length < 3) {
+      throw new Error('Debe enviar al menos tres materias');
+    }
+
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const carrera = await tx.carrera.create({
         data: {
-          nombre: 'Desarrollo de Software',
+          nombre: nombreCarrera,
         },
       });
 
       const { id: carreraId } = carrera;
 
-      const materiasData = [
-        { nombre: 'Programacion 1', carreraId },
-        { nombre: 'Programacion 2', carreraId },
-        { nombre: 'Base de Datos', carreraId },
-      ];
+      const materiasData = materias.map((nombre) => ({ nombre, carreraId }));
 
       const [primeraMateria, segundaMateria, terceraMateria] = materiasData;
-      const { nombre: nombreMateriaUno } = primeraMateria;
-      const { nombre: nombreMateriaDos } = segundaMateria;
-      const { nombre: nombreMateriaTres } = terceraMateria;
+
+      if (!primeraMateria || !segundaMateria || !terceraMateria) {
+        throw new Error('Debe enviar al menos tres materias');
+      }
 
       await tx.materia.createMany({
-        data: [
-          { nombre: nombreMateriaUno, carreraId },
-          { nombre: nombreMateriaDos, carreraId },
-          { nombre: nombreMateriaTres, carreraId },
-        ],
+        data: materiasData,
       });
 
       return tx.carrera.findUnique({
@@ -44,20 +62,30 @@ export class UniversidadService {
     });
   }
 
-  async crearCicloYMatricular() {
+  async crearCicloYMatricular(params: CrearCicloParams) {
+    const { nombreCiclo, carreraNombre } = params;
+
+    if (!nombreCiclo) {
+      throw new Error('Debe enviar el nombre del ciclo');
+    }
+
+    if (!carreraNombre) {
+      throw new Error('Debe enviar el nombre de la carrera');
+    }
+
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const ciclo = await tx.ciclo.create({
         data: {
-          nombre: '2026-2027',
+          nombre: nombreCiclo,
           activo: true,
         },
       });
 
-      const { id: cicloId, nombre: nombreCiclo } = ciclo;
+      const { id: cicloId, nombre: nombreCicloCreado } = ciclo;
 
       const carrera = await tx.carrera.findFirst({
         where: {
-          nombre: 'Desarrollo de Software',
+          nombre: carreraNombre,
         },
       });
 
@@ -109,7 +137,7 @@ export class UniversidadService {
       return {
         ciclo: {
           id: cicloId,
-          nombre: nombreCiclo,
+          nombre: nombreCicloCreado,
         },
         materiaAsignada: nombreMateria,
         matriculasCreadas,
@@ -117,7 +145,20 @@ export class UniversidadService {
     });
   }
 
-  async asignarLaboratorio() {
+  async asignarLaboratorio(params: AsignarLaboratorioParams) {
+    const {
+      materiaNombre,
+      laboratorioNombre,
+    } = params;
+
+    if (!materiaNombre) {
+      throw new Error('Debe enviar el nombre de la materia');
+    }
+
+    if (!laboratorioNombre) {
+      throw new Error('Debe enviar el nombre del laboratorio');
+    }
+
     const ciclo = await this.prisma.ciclo.findFirst({
       where: {
         activo: true,
@@ -135,9 +176,7 @@ export class UniversidadService {
 
     const materia = await this.prisma.materia.findFirst({
       where: {
-        nombre: {
-          in: ['Programacion 1', 'Programacion 2', 'Base de Datos'],
-        },
+        nombre: materiaNombre,
       },
       orderBy: {
         id: 'asc',
@@ -163,6 +202,9 @@ export class UniversidadService {
     }
 
     const laboratorio = await this.prisma.laboratorio.findFirst({
+      where: {
+        nombre: laboratorioNombre,
+      },
       orderBy: {
         id: 'asc',
       },
