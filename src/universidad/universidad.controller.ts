@@ -9,9 +9,12 @@ type CrearCarreraBody = {
 type CrearCicloBody = {
   nombreCiclo?: string;
   carreraNombre?: string;
+  materiaNombre?: string;
 };
 
 type AsignarLaboratorioBody = {
+  nombreCiclo?: string;
+  carreraNombre?: string;
   materiaNombre?: string;
   laboratorioNombre?: string;
 };

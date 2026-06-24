@@ -10,9 +10,12 @@ type CrearCarreraParams = {
 type CrearCicloParams = {
   nombreCiclo?: string;
   carreraNombre?: string;
+  materiaNombre?: string;
 };
 
 type AsignarLaboratorioParams = {
+  nombreCiclo?: string;
+  carreraNombre?: string;
   materiaNombre?: string;
   laboratorioNombre?: string;
 };
@@ -63,7 +66,7 @@ export class UniversidadService {
   }
 
   async crearCicloYMatricular(params: CrearCicloParams) {
-    const { nombreCiclo, carreraNombre } = params;
+    const { nombreCiclo, carreraNombre, materiaNombre } = params;
 
     if (!nombreCiclo) {
       throw new Error('Debe enviar el nombre del ciclo');
@@ -71,6 +74,10 @@ export class UniversidadService {
 
     if (!carreraNombre) {
       throw new Error('Debe enviar el nombre de la carrera');
+    }
+
+    if (!materiaNombre) {
+      throw new Error('Debe enviar el nombre de la materia');
     }
 
     return this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -101,22 +108,18 @@ export class UniversidadService {
         throw new Error('No hay estudiantes registrados');
       }
 
-      const materias = await tx.materia.findMany({
+      const materia = await tx.materia.findFirst({
         where: {
           carreraId,
-        },
-        orderBy: {
-          id: 'asc',
+          nombre: materiaNombre,
         },
       });
 
-      const [primeraMateria] = materias;
-
-      if (!primeraMateria) {
-        throw new Error('No hay materias registradas para la carrera');
+      if (!materia) {
+        throw new Error('Materia no encontrada en la carrera');
       }
 
-      const { id: materiaId, nombre: nombreMateria } = primeraMateria;
+      const { id: materiaId, nombre: nombreMateria } = materia;
 
       const matriculas = estudiantes.map((estudiante) => {
         const { id: estudianteId } = estudiante;
@@ -147,9 +150,19 @@ export class UniversidadService {
 
   async asignarLaboratorio(params: AsignarLaboratorioParams) {
     const {
+      nombreCiclo,
+      carreraNombre,
       materiaNombre,
       laboratorioNombre,
     } = params;
+
+    if (!nombreCiclo) {
+      throw new Error('Debe enviar el nombre del ciclo');
+    }
+
+    if (!carreraNombre) {
+      throw new Error('Debe enviar el nombre de la carrera');
+    }
 
     if (!materiaNombre) {
       throw new Error('Debe enviar el nombre de la materia');
@@ -161,10 +174,8 @@ export class UniversidadService {
 
     const ciclo = await this.prisma.ciclo.findFirst({
       where: {
+        nombre: nombreCiclo,
         activo: true,
-      },
-      orderBy: {
-        id: 'desc',
       },
     });
 
@@ -172,14 +183,24 @@ export class UniversidadService {
       throw new Error('No hay ciclo activo');
     }
 
-    const { id: cicloId, nombre: nombreCiclo } = ciclo;
+    const { id: cicloId, nombre: nombreCicloActivo } = ciclo;
+
+    const carrera = await this.prisma.carrera.findFirst({
+      where: {
+        nombre: carreraNombre,
+      },
+    });
+
+    if (!carrera) {
+      throw new Error('Carrera no encontrada');
+    }
+
+    const { id: carreraId } = carrera;
 
     const materia = await this.prisma.materia.findFirst({
       where: {
+        carreraId,
         nombre: materiaNombre,
-      },
-      orderBy: {
-        id: 'asc',
       },
     });
 
@@ -232,7 +253,7 @@ export class UniversidadService {
     return {
       ...asignacion,
       resumen: {
-        ciclo: nombreCiclo,
+        ciclo: nombreCicloActivo,
         materia: nombreMateria,
         laboratorio: nombreLaboratorio,
       },
