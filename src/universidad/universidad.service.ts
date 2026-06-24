@@ -1,30 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { AsignarLaboratorioDto } from './dto/asignar-laboratorio.dto';
+import { CrearCarreraDto } from './dto/crear-carrera.dto';
+import { CrearCicloDto } from './dto/crear-ciclo.dto';
 import { PrismaService } from '../prisma/prisma.service';
-
-type CrearCarreraParams = {
-  nombreCarrera?: string;
-  materias?: string[];
-};
-
-type CrearCicloParams = {
-  nombreCiclo?: string;
-  carreraNombre?: string;
-  materiaNombre?: string;
-};
-
-type AsignarLaboratorioParams = {
-  nombreCiclo?: string;
-  carreraNombre?: string;
-  materiaNombre?: string;
-  laboratorioNombre?: string;
-};
 
 @Injectable()
 export class UniversidadService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async crearCarreraConMaterias(params: CrearCarreraParams) {
+  async crearCarreraConMaterias(params: CrearCarreraDto) {
     const { nombreCarrera, materias } = params;
 
     if (!nombreCarrera) {
@@ -65,7 +50,7 @@ export class UniversidadService {
     });
   }
 
-  async crearCicloYMatricular(params: CrearCicloParams) {
+  async crearCicloYMatricular(params: CrearCicloDto) {
     const { nombreCiclo, carreraNombre, materiaNombre } = params;
 
     if (!nombreCiclo) {
@@ -148,7 +133,7 @@ export class UniversidadService {
     });
   }
 
-  async asignarLaboratorio(params: AsignarLaboratorioParams) {
+  async asignarLaboratorio(params: AsignarLaboratorioDto) {
     const {
       nombreCiclo,
       carreraNombre,

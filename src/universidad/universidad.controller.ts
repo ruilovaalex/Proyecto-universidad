@@ -1,40 +1,25 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { UniversidadService } from './universidad.service';
-
-type CrearCarreraBody = {
-  nombreCarrera?: string;
-  materias?: string[];
-};
-
-type CrearCicloBody = {
-  nombreCiclo?: string;
-  carreraNombre?: string;
-  materiaNombre?: string;
-};
-
-type AsignarLaboratorioBody = {
-  nombreCiclo?: string;
-  carreraNombre?: string;
-  materiaNombre?: string;
-  laboratorioNombre?: string;
-};
+import { AsignarLaboratorioDto } from './dto/asignar-laboratorio.dto';
+import { CrearCarreraDto } from './dto/crear-carrera.dto';
+import { CrearCicloDto } from './dto/crear-ciclo.dto';
 
 @Controller('universidad')
 export class UniversidadController {
   constructor(private readonly universidadService: UniversidadService) {}
 
   @Post('carrera-materias')
-  async crearCarreraConMaterias(@Body() body: CrearCarreraBody) {
+  async crearCarreraConMaterias(@Body() body: CrearCarreraDto) {
     return this.universidadService.crearCarreraConMaterias(body);
   }
 
   @Post('ciclo-matricular')
-  async crearCicloYMatricular(@Body() body: CrearCicloBody) {
+  async crearCicloYMatricular(@Body() body: CrearCicloDto) {
     return this.universidadService.crearCicloYMatricular(body);
   }
 
   @Post('asignar-laboratorio')
-  async asignarLaboratorio(@Body() body: AsignarLaboratorioBody) {
+  async asignarLaboratorio(@Body() body: AsignarLaboratorioDto) {
     return this.universidadService.asignarLaboratorio(body);
   }
 }
